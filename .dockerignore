@@ -1,0 +1,30 @@
+# Rust build artifacts
+target/
+**/*.rs.bk
+*.pdb
+
+# Frontend (built separately)
+frontend/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs
+*.md
+RAFT_EXPLAINER.md
+DIAGRAMS.md
+DEPLOYMENT.md
+
+# Reference implementation
+Raft-Consensus-Algo-TS-/

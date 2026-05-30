@@ -148,9 +148,10 @@ implicitly when the first current-term entry clears the majority threshold.
 3. ✅ Unit tests — 35 tests in `handlers::tests`
 4. ✅ Async event loop — `node.rs`, timer tasks, `spawn_cluster`
 5. ✅ Integration tests — `tests/cluster_integration.rs`, watch-channel observability
-6. ☐ WebSocket bridge — `StateEvent` broadcast channel, Axum `/ws` endpoint
-7. ☐ Next.js frontend — connect WS, render node circles, log panel, controls
-8. ☐ Frontend interactions — crash/restart, network partition, speed control
+6. ✅ WebSocket bridge — `StateEvent` broadcast channel, Axum `/ws` endpoint
+7. ✅ Next.js frontend — connect WS, render node circles, log panel, controls
+8. ✅ Frontend interactions — crash/restart, message flow visualization
+9. ✅ Deployment — Docker, Docker Compose, systemd, cloud platforms
 
 ---
 
