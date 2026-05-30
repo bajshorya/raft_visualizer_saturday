@@ -260,14 +260,39 @@ impl NodeRunner {
     // ── Outbound dispatch ─────────────────────────────────────────────────────
 
     async fn dispatch_all(&self, msgs: Vec<OutboundMsg>) {
+        use crate::events::MessageType;
+        use crate::message::RpcMessage;
+
         for m in msgs {
             match m {
                 OutboundMsg::Rpc { to, payload } => {
+                    // Emit MessageSent event for visualization
+                    let msg_type = match payload {
+                        RpcMessage::RequestVote { .. } => MessageType::RequestVote,
+                        RpcMessage::AppendEntries { .. } => MessageType::AppendEntries,
+                    };
+                    self.emit(StateEvent::MessageSent {
+                        from: self.node.id.0,
+                        to: to.0,
+                        message_type: msg_type,
+                    });
+
                     if let Some(tx) = self.peers.get(&to) {
                         let _ = tx.send(Message::Rpc { from: self.node.id, payload }).await;
                     }
                 }
                 OutboundMsg::Response { to, payload } => {
+                    // Emit MessageSent event for responses
+                    let msg_type = match payload {
+                        RpcResponse::RequestVoteResponse { .. } => MessageType::RequestVoteResponse,
+                        RpcResponse::AppendEntriesResponse { .. } => MessageType::AppendEntriesResponse,
+                    };
+                    self.emit(StateEvent::MessageSent {
+                        from: self.node.id.0,
+                        to: to.0,
+                        message_type: msg_type,
+                    });
+
                     if let Some(tx) = self.peers.get(&to) {
                         let _ = tx.send(Message::RpcResponse(payload)).await;
                     }

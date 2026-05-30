@@ -64,6 +64,13 @@ pub enum StateEvent {
         node_id: u64,
         term:    u64,
     },
+
+    // A RequestVote RPC was sent from one node to another.
+    MessageSent {
+        from:         u64,
+        to:           u64,
+        message_type: MessageType,
+    },
 }
 
 // ── Supporting types ──────────────────────────────────────────────────────────
@@ -82,4 +89,14 @@ pub struct EntrySnapshot {
     pub index:   usize,
     pub term:    u64,
     pub command: String,
+}
+
+// Type of message being sent — used for arrow color/label in the frontend.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MessageType {
+    RequestVote,
+    RequestVoteResponse,
+    AppendEntries,
+    AppendEntriesResponse,
 }

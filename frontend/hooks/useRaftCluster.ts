@@ -1,15 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useReducer } from "react";
+import { useCallback, useEffect, useReducer, useState } from "react";
 import type {
   ClusterState,
+  MessageArrow,
   NodeState,
   StateEvent,
   TimestampedEvent,
 } from "../types/raft";
 
-const WS_URL   = "ws://localhost:3001/ws";
-const HTTP_URL = "http://localhost:3001";
+const WS_URL   = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:3001/ws";
+const HTTP_URL = process.env.NEXT_PUBLIC_HTTP_URL || "http://localhost:3001";
 const NODE_IDS = [1, 2, 3, 4, 5];
 const MAX_EVENTS = 120; // how many events to keep in the feed
 
@@ -75,11 +76,28 @@ function applyEvent(cluster: ClusterState, e: StateEvent): ClusterState {
       };
 
     case "vote_received":
-      // This event is for visualization (animating vote arrows) — doesn't change node state.
+    case "message_sent":
+      // These events are for visualization only — don't change node state.
       return cluster;
 
     default:
       return cluster;
+  }
+}
+
+// Filter out noisy events - only keep important state changes
+function isImportantEvent(e: StateEvent): boolean {
+  switch (e.type) {
+    case "role_change":      // Node became Leader/Candidate/Follower
+    case "election_start":   // New election started
+    case "log_append":       // New command added to log
+    case "commit":           // Log entry committed
+      return true;
+    case "vote_cast":        // Too noisy during elections
+    case "vote_received":    // Too noisy during elections
+    case "heartbeat":        // Fires every 50ms
+    case "message_sent":     // Fires constantly
+      return false;
   }
 }
 
@@ -89,7 +107,9 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         cluster: applyEvent(state.cluster, action.event),
-        events:  [{ ...action.event, ts: Date.now() }, ...state.events].slice(0, MAX_EVENTS),
+        events: isImportantEvent(action.event)
+          ? [{ ...action.event, ts: Date.now() }, ...state.events].slice(0, MAX_EVENTS)
+          : state.events,
       };
     case "connected":
       return { ...state, connected: true };
@@ -106,6 +126,9 @@ export function useRaftCluster() {
     events:    [],
     connected: false,
   });
+
+  // Track active message arrows (auto-expire after 1 second)
+  const [arrows, setArrows] = useState<MessageArrow[]>([]);
 
   // WebSocket connection with automatic reconnect.
   useEffect(() => {
@@ -128,6 +151,18 @@ export function useRaftCluster() {
         try {
           const event = JSON.parse(msg.data as string) as StateEvent;
           dispatch({ kind: "event", event });
+
+          // Add message arrows for visualization
+          if (event.type === "message_sent") {
+            const arrow: MessageArrow = {
+              id: `${event.from}-${event.to}-${Date.now()}`,
+              from: event.from,
+              to: event.to,
+              message_type: event.message_type,
+              createdAt: Date.now(),
+            };
+            setArrows((prev) => [...prev, arrow]);
+          }
         } catch {
           // ignore malformed messages
         }
@@ -139,6 +174,15 @@ export function useRaftCluster() {
       destroyed = true;
       ws?.close();
     };
+  }, []);
+
+  // Auto-remove expired arrows every 100ms
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setArrows((prev) => prev.filter((a) => now - a.createdAt < 1000));
+    }, 100);
+    return () => clearInterval(interval);
   }, []);
 
   // POST a command to the backend — the current leader will accept it.
@@ -161,5 +205,5 @@ export function useRaftCluster() {
     await fetch(`${HTTP_URL}/restart/${nodeId}`, { method: "POST" });
   }, []);
 
-  return { ...state, sendCommand, crashNode, restartNode };
+  return { ...state, arrows, sendCommand, crashNode, restartNode };
 }
