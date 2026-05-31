@@ -115,7 +115,7 @@ function reducer(state: State, action: Action): State {
     case "connected":
       return { ...state, connected: true, isInitialConnection: false };
     case "disconnected":
-      return { ...state, connected: false, cluster: initialCluster() };
+      return { ...state, connected: false, cluster: initialCluster(), events: [] };
   }
 }
 
