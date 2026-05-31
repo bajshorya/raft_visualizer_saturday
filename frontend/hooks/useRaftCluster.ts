@@ -30,6 +30,7 @@ interface State {
   cluster:   ClusterState;
   events:    TimestampedEvent[];
   connected: boolean;
+  isInitialConnection: boolean;
 }
 
 type Action =
@@ -112,7 +113,7 @@ function reducer(state: State, action: Action): State {
           : state.events,
       };
     case "connected":
-      return { ...state, connected: true };
+      return { ...state, connected: true, isInitialConnection: false };
     case "disconnected":
       return { ...state, connected: false, cluster: initialCluster() };
   }
@@ -125,6 +126,7 @@ export function useRaftCluster() {
     cluster:   initialCluster(),
     events:    [],
     connected: false,
+    isInitialConnection: true,
   });
 
   // Track active message arrows (auto-expire after 1 second)

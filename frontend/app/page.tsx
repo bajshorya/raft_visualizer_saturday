@@ -9,7 +9,7 @@ import MessageArrows from "../components/MessageArrows";
 const NODE_IDS = [1, 2, 3, 4, 5];
 
 export default function Home() {
-  const { cluster, events, arrows, connected, sendCommand, crashNode, restartNode } = useRaftCluster();
+  const { cluster, events, arrows, connected, isInitialConnection, sendCommand, crashNode, restartNode } = useRaftCluster();
   const [cmd, setCmd] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +34,26 @@ export default function Home() {
 
   return (
     <div className="flex h-screen flex-col gap-4 p-6 overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-black font-mono">
+
+      {/* Backend Starting Alert */}
+      {!connected && isInitialConnection && (
+        <div className="flex items-center justify-between px-6 py-3 text-sm
+                        border border-amber-700/50 bg-amber-950/40 text-amber-300
+                        animate-pulse">
+          <div className="flex items-center gap-3">
+            <svg className="animate-spin h-5 w-5 text-amber-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="font-bold tracking-wide">
+              Backend is starting up...
+            </span>
+            <span className="text-amber-500/70 text-xs">
+              (Free tier on Render may take 30-60 seconds to wake up)
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <header className="flex items-center justify-between border-b border-slate-800 pb-4">
